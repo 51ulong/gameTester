@@ -10,8 +10,13 @@ import org.opencv.features2d.BFMatcher
 import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.xfeatures2d.SURF
 import org.opencv.core.MatOfKeyPoint
-
-
+import org.opencv.features2d.FeatureDetector
+import org.opencv.core.KeyPoint
+import org.opencv.features2d.DescriptorExtractor
+import org.opencv.features2d.Features2d
+import org.opencv.core.Scalar
+import org.opencv.imgcodecs.Imgcodecs.CV_LOAD_IMAGE_COLOR
+import org.opencv.core.Mat
 
 
 class Simulator {
@@ -39,36 +44,50 @@ fun main(args: Array<String>) {
 
     val put = mat.put(5, 5, 77.0)
 
-    val detector = SURF.create()
 
+//    val featureDetector = FeatureDetector.create(FeatureDetector.SURF)
+    val featureDetector = SURF.create()
 
+    val descExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF)
 
-    println(mat.dump())
+    DescriptorExtractor
 
 
     val loginImage = Imgcodecs.imread("images/login.png")
 
-    var screenImage = Imgcodecs.imread("images/gamescreen.png")
+    val screenImage = Imgcodecs.imread("images/gamescreen.png")
+
+    val targetFeature = MatOfKeyPoint()
+    val backgroundFeature = MatOfKeyPoint()
+
+    featureDetector.detect(loginImage, targetFeature)
 
 
-    val dummy1 = MatOfKeyPoint()
-    val dummy2 = MatOfKeyPoint()
+    val targetDescripto = MatOfKeyPoint()
+    descExtractor.compute(loginImage, targetFeature, targetDescripto)
 
-    detector.detect(loginImage, dummy1)
-    detector.detect(screenImage, dummy2)
+    val outputImage = Mat(loginImage.rows(), loginImage.cols(), CV_LOAD_IMAGE_COLOR)
+    val newKeypointColor = Scalar(255.0, 0.0, 0.0)
 
-    val bfMatcher = BFMatcher()
-
-
-    val matchs = bfMatcher.match(dummy1,dummy2)
+    val keyPoints = targetFeature.toArray()
 
 
+    println("Drawing key points on object image...")
+    Features2d.drawKeypoints(loginImage, targetFeature, outputImage, newKeypointColor, 0)
 
 
+    Imgcodecs.imwrite("testout.png", outputImage)
 
-    sim1.click("start_png.png")
 
-    println(Core.NATIVE_LIBRARY_NAME)
+//
+//    featureDetector.detect(screenImage, backgroundFeature)
+//
+//
+//
+//    for (ky in keyPoints) {
+//        println(ky)
+//    }
+
 }
 
 
