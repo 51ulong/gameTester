@@ -39,7 +39,7 @@ fun main(args: Array<String>) {
 
     val put = mat.put(5, 5, 77.0)
 
-    val dector = SURF.create()
+    val detector = SURF.create()
 
 
 
@@ -54,8 +54,8 @@ fun main(args: Array<String>) {
     val dummy1 = MatOfKeyPoint()
     val dummy2 = MatOfKeyPoint()
 
-    dector.detect(loginImage, dummy1)
-    dector.detect(screenImage, dummy2)
+    detector.detect(loginImage, dummy1)
+    detector.detect(screenImage, dummy2)
 
     val bfMatcher = BFMatcher()
 
