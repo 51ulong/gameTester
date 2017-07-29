@@ -45,23 +45,17 @@ fun main(args: Array<String>) {
     val featureDetector = FeatureDetector.create(FeatureDetector.SURF)
     val descExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF)
 
-    val targetImage = Highgui.imread("images/login.png", CV_LOAD_IMAGE_COLOR)
+    val targetImage = Highgui.imread("images/login.png")
     val targetFeatureKeyPoints = MatOfKeyPoint()
-
-
-    featureDetector.detect(targetImage, targetFeatureKeyPoints)
     val targetDescriptorKeyPoints = MatOfKeyPoint()
-    val outputImage = Mat(targetImage.rows(), targetImage.cols(), CV_LOAD_IMAGE_COLOR)
-
+    featureDetector.detect(targetImage, targetFeatureKeyPoints)
     descExtractor.compute(targetImage, targetFeatureKeyPoints, targetDescriptorKeyPoints)
 
 
-    val screenImage = Highgui.imread("images/gamescreen.png", CV_LOAD_IMAGE_COLOR)
+    val screenImage = Highgui.imread("images/gamescreen.png")
     val screenFeatureKeyPoints = MatOfKeyPoint()
     val screenDescriptorKeyPoints = MatOfKeyPoint()
-
     featureDetector.detect(screenImage, screenFeatureKeyPoints)
-
     descExtractor.compute(screenImage, screenFeatureKeyPoints, screenDescriptorKeyPoints)
 
 
@@ -71,7 +65,6 @@ fun main(args: Array<String>) {
 
     val matches = LinkedList<MatOfDMatch>()
     val descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED)
-
     descriptorMatcher.knnMatch(targetDescriptorKeyPoints, screenDescriptorKeyPoints, matches, 2)
 
 
@@ -144,7 +137,6 @@ fun main(args: Array<String>) {
                 matchoutput, matchestColor,
                 colorScalar, MatOfByte(), 2)
 
-        Highgui.imwrite("outputImage.jpg", outputImage)
         Highgui.imwrite("matchoutput.jpg", matchoutput)
         Highgui.imwrite("img.jpg", img)
 
