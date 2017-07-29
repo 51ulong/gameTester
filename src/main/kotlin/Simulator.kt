@@ -19,6 +19,11 @@ import org.opencv.features2d.DescriptorMatcher
 import org.opencv.core.MatOfDMatch
 import java.util.LinkedList
 import org.opencv.features2d.DMatch
+import org.opencv.core.Core
+import org.opencv.core.CvType
+import org.opencv.calib3d.Calib3d
+import org.opencv.core.MatOfPoint2f
+import org.opencv.core.MatOfByte
 
 
 class Simulator {
@@ -36,39 +41,28 @@ fun main(args: Array<String>) {
 
     System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 
-    println(Core.VERSION)
-
 
     val featureDetector = FeatureDetector.create(FeatureDetector.SURF)
     val descExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF)
 
-    var targetImage = Highgui.imread("images/login.png", CV_LOAD_IMAGE_COLOR)
-    val targetFeature = MatOfKeyPoint()
+    val targetImage = Highgui.imread("images/login.png", CV_LOAD_IMAGE_COLOR)
+    val targetFeatureKeyPoints = MatOfKeyPoint()
 
 
-    featureDetector.detect(targetImage, targetFeature)
-
-    val targetDescriptor = MatOfKeyPoint()
-
+    featureDetector.detect(targetImage, targetFeatureKeyPoints)
+    val targetDescriptorKeyPoints = MatOfKeyPoint()
     val outputImage = Mat(targetImage.rows(), targetImage.cols(), CV_LOAD_IMAGE_COLOR)
-    val newKeypointColor = Scalar(255.0, 0.0, 0.0)
 
-    println("Drawing key points on object image...")
-    Features2d.drawKeypoints(targetImage, targetFeature, outputImage, newKeypointColor, 0)
-
-    Highgui.imwrite("testout.png", outputImage)
-
-
-    descExtractor.compute(targetImage, targetFeature, targetDescriptor)
+    descExtractor.compute(targetImage, targetFeatureKeyPoints, targetDescriptorKeyPoints)
 
 
     val screenImage = Highgui.imread("images/gamescreen.png", CV_LOAD_IMAGE_COLOR)
-    val screenKeyPoint = MatOfKeyPoint()
-    val screenKeyDescriptor = MatOfKeyPoint()
+    val screenFeatureKeyPoints = MatOfKeyPoint()
+    val screenDescriptorKeyPoints = MatOfKeyPoint()
 
-    featureDetector.detect(screenImage, screenKeyPoint)
+    featureDetector.detect(screenImage, screenFeatureKeyPoints)
 
-    descExtractor.compute(screenImage, screenKeyPoint, screenKeyDescriptor)
+    descExtractor.compute(screenImage, screenFeatureKeyPoints, screenDescriptorKeyPoints)
 
 
     val matchoutput = Mat(screenImage.rows() * 2, screenImage.cols() * 2, Highgui.CV_LOAD_IMAGE_COLOR)
@@ -78,7 +72,7 @@ fun main(args: Array<String>) {
     val matches = LinkedList<MatOfDMatch>()
     val descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED)
 
-    descriptorMatcher.knnMatch(targetDescriptor, screenKeyDescriptor, matches, 2)
+    descriptorMatcher.knnMatch(targetDescriptorKeyPoints, screenDescriptorKeyPoints, matches, 2)
 
 
     val nndrRatio = 0.7f
@@ -99,6 +93,62 @@ fun main(args: Array<String>) {
 
     if (goodMatchesList.size >= 7) {
         System.out.println("Object Found!!!")
+
+
+        val featureKeypointList = targetFeatureKeyPoints.toList()
+        val screenKeypointList = screenFeatureKeyPoints.toList()
+
+        val objectPoints = LinkedList<Point>()
+        val scenePoints = LinkedList<Point>()
+
+        for (match in goodMatchesList) {
+            objectPoints.addLast(featureKeypointList.get(match.queryIdx).pt)
+            scenePoints.addLast(screenKeypointList.get(match.trainIdx).pt)
+        }
+
+
+        val objMatOfPoint2f = MatOfPoint2f()
+        objMatOfPoint2f.fromList(objectPoints)
+        val scnMatOfPoint2f = MatOfPoint2f()
+        scnMatOfPoint2f.fromList(scenePoints)
+
+        val homography = Calib3d.findHomography(objMatOfPoint2f, scnMatOfPoint2f, Calib3d.RANSAC, 3.0)
+
+        val obj_corners = Mat(4, 1, CvType.CV_32FC2)
+        val scene_corners = Mat(4, 1, CvType.CV_32FC2)
+
+        obj_corners.put(0, 0, *doubleArrayOf(0.0, 0.0))
+        obj_corners.put(1, 0, *doubleArrayOf(targetImage.cols() * 1.0, 0.0))
+        obj_corners.put(2, 0, *doubleArrayOf(targetImage.cols() * 1.0, targetImage.rows() * 1.0))
+        obj_corners.put(3, 0, *doubleArrayOf(0.0, targetImage.rows() * 1.0))
+
+        println("Transforming object corners to scene corners...")
+        Core.perspectiveTransform(obj_corners, scene_corners, homography)
+
+        val img = Highgui.imread("images/gamescreen.png", Highgui.CV_LOAD_IMAGE_COLOR)
+
+        Core.line(img, Point(scene_corners.get(0, 0)), Point(scene_corners.get(1, 0)), Scalar(0.0, 255.0, 0.0), 4)
+        Core.line(img, Point(scene_corners.get(1, 0)), Point(scene_corners.get(2, 0)), Scalar(0.0, 255.0, 0.0), 4)
+        Core.line(img, Point(scene_corners.get(2, 0)), Point(scene_corners.get(3, 0)), Scalar(0.0, 255.0, 0.0), 4)
+        Core.line(img, Point(scene_corners.get(3, 0)), Point(scene_corners.get(0, 0)), Scalar(0.0, 255.0, 0.0), 4)
+
+        val goodMatches = MatOfDMatch()
+        goodMatches.fromList(goodMatchesList)
+
+        val colorScalar = Scalar(255.0, .0, .0)
+
+        Features2d.drawMatches(
+                targetImage, targetFeatureKeyPoints,
+                screenImage, screenFeatureKeyPoints,
+                goodMatches,
+                matchoutput, matchestColor,
+                colorScalar, MatOfByte(), 2)
+
+        Highgui.imwrite("outputImage.jpg", outputImage)
+        Highgui.imwrite("matchoutput.jpg", matchoutput)
+        Highgui.imwrite("img.jpg", img)
+
+
     }
 
 
