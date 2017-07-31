@@ -1,4 +1,5 @@
 import com.oracle.tools.packager.windows.WinExeBundler
+import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.core.CvType
 import org.opencv.highgui.Highgui
@@ -10,6 +11,9 @@ import java.io.FileOutputStream
 
 
 fun main(args: Array<String>) {
+
+
+    System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 
     val exePath = "/usr/bin/chromedriver"
     System.setProperty("webdriver.chrome.driver", exePath)
@@ -27,21 +31,23 @@ fun main(args: Array<String>) {
 
     try {
 
-
-        val mat = Highgui.imread("scree.shot.png")
-        println("from high")
-        println(mat.size())
-        println(mat.type())
+//
+//        val mat = Highgui.imread("scree.shot.png")
+//        println("from high")
+//        println(mat.size())
+//        println(mat.type())
+//
+//        println(mat.get(0,0))
 
         println(screenBytes.size)
-        val screenMatByte = Mat(1, screenBytes.size, CvType.CV_8UC4)
+        val screenMatByte = Mat(1, screenBytes.size, CvType.CV_8U)
         screenMatByte.put(0, 0, screenBytes)
 
         val screenMat = Highgui.imdecode(screenMatByte, CV_LOAD_IMAGE_UNCHANGED)
 
-
-
+        println("next")
         println(screenMat.size())
+
     } finally {
         driver.close()
 
