@@ -35,6 +35,25 @@ class Simulator {
 }
 
 
+class TargetFinder {
+
+    private val descExtractor: DescriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF)
+
+    private val featureExtractor: FeatureDetector = FeatureDetector.create(FeatureDetector.SURF)
+
+    fun inScreen(): TargetFinder {
+
+        return this
+    }
+
+    fun findTarget(): Point {
+
+        return Point()
+    }
+
+}
+
+
 fun main(args: Array<String>) {
 
     println(System.getProperty("java.library.path"))
@@ -88,15 +107,15 @@ fun main(args: Array<String>) {
         System.out.println("Object Found!!!")
 
 
-        val featureKeypointList = targetFeatureKeyPoints.toList()
-        val screenKeypointList = screenFeatureKeyPoints.toList()
+        val featureKeyPointList = targetFeatureKeyPoints.toList()
+        val screenKeyPointList = screenFeatureKeyPoints.toList()
 
         val objectPoints = LinkedList<Point>()
         val scenePoints = LinkedList<Point>()
 
         for (match in goodMatchesList) {
-            objectPoints.addLast(featureKeypointList.get(match.queryIdx).pt)
-            scenePoints.addLast(screenKeypointList.get(match.trainIdx).pt)
+            objectPoints.addLast(featureKeyPointList.get(match.queryIdx).pt)
+            scenePoints.addLast(screenKeyPointList.get(match.trainIdx).pt)
         }
 
 
@@ -125,6 +144,15 @@ fun main(args: Array<String>) {
         Core.line(img, Point(scene_corners.get(2, 0)), Point(scene_corners.get(3, 0)), Scalar(0.0, 255.0, 0.0), 4)
         Core.line(img, Point(scene_corners.get(3, 0)), Point(scene_corners.get(0, 0)), Scalar(0.0, 255.0, 0.0), 4)
 
+        println(scene_corners.dump())
+
+        val center = Core.mean(scene_corners)
+
+
+        println(scene_corners.dump())
+
+        println("the center is  ${center}")
+
         val goodMatches = MatOfDMatch()
         goodMatches.fromList(goodMatchesList)
 
@@ -139,8 +167,6 @@ fun main(args: Array<String>) {
 
         Highgui.imwrite("matchoutput.jpg", matchoutput)
         Highgui.imwrite("img.jpg", img)
-
-
     }
 
 
