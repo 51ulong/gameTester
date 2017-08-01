@@ -10,7 +10,7 @@ fun main(args: Array<String>) {
         simulator.designDimension(Dimension(750, 600))
                 .launch()
                 .wait(2)
-                .click("images/login.png")
+                .click("images/login_youke.png")
                 .wait(3)
 
     } finally {
